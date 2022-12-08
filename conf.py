@@ -2,16 +2,28 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, Boolean, SmallInteger, CheckConstraint, ForeignKey, REAL, PrimaryKeyConstraint
+import random
 
 # Connection à la BDD
 engine = create_engine('sqlite:///db.sqlite')
 Base = declarative_base()
+
+Session = sessionmaker(bind=engine) # On créer une session qui écoute "Engine"
+session = Session()
 
 ### Génération des tables & des colonnes avec SQLAlchemy
 class Pays(Base):
     __tablename__ = "Pays"
 
     pays = Column(String, primary_key=True)
+
+    def get_all_restaurant(self):
+        """
+        Method qui retourne la liste des restaurants du pays
+        return list : Liste des restaurants du pays
+        """
+        return session.query(Restaurant).filter_by(pays = self.pays).all()
+
 
 class Restaurant(Base):
     __tablename__ = "Restaurant"
@@ -23,6 +35,48 @@ class Restaurant(Base):
     service_rapide = Column(SmallInteger, default=0)
     accessibilite = Column(SmallInteger, default=0)
     parking = Column(SmallInteger, default=0)
+
+    def find_directeur(self):
+        """
+        Method qui retourne le directeur du restaurant
+        return Employe : l'objet du directeur
+        """
+        return session.query(Employe).filter_by(code_postal = self.code_postal, poste = "Directeur").first()
+
+    def find_manager(self):
+        """
+        Method qui retourne tous les manager du restaurant
+        retur list : Liste de manager
+        """
+
+        return session.query(Employe).filter_by(code_postal = self.code_postal, poste = "Manager").all()
+
+    def find_employe(self):
+        """
+        Method qui retourne la liste des employés du restaurant
+        return list : Liste des employés du restaurant
+        """
+        return session.query(Employe).filter_by(code_postal = self.code_postal).all()
+    
+    def create_employe(self, nom: str, poste: str, adresse: str):
+        """
+        Method qui créé un nouvel employé au restaurant
+        """
+        id_superieur = None
+        if poste.lower() == "manager":
+            id_superieur = self.find_directeur().id_employe
+            session.add(Employe(code_postal=self.code_postal, poste="Manager", id_superieur=id_superieur, nom=nom, adresse=adresse))
+        elif poste.lower() == "directeur":
+            if self.find_directeur() != None:
+                return
+            else:
+                session.add(Employe(code_postal=self.code_postal, poste="Directeur", nom=nom, adresse=adresse))
+        else:
+            id_superieur = random.choice(self.find_manager()).id_employe
+            session.add(Employe(code_postal=self.code_postal, poste=poste, id_superieur=id_superieur, nom=nom, adresse=adresse))
+        
+        session.commit()
+
 
 class Employe(Base):
     __tablename__ = "Employe"
@@ -36,6 +90,19 @@ class Employe(Base):
     adresse = Column(String)
     note = Column(Integer, default=5)
 
+    def get_all_paie(self):
+        """
+        Method qui retourne la liste des salaires de l'employé
+        return list : Liste des salaires
+        """
+        return session.query(Paie).filter_by(id_employe = self.id_employe).all()
+    
+    def get_rib(self):
+        """
+        Method qui retourne le rib de l'employé
+        return Rib : rib de l'employé
+        """
+        return session.query(Rib).filter_by(id_employe = self.id_employe).first()
 
 class Rib(Base):
     __tablename__ = "Rib"
