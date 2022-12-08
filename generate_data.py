@@ -158,6 +158,18 @@ def generateRecette():
 
 generateRecette()
 
+def generateStock():
+    """
+    Fonction qui genere les stocks des ingrédients
+    """
+    for i in session.query(Restaurant).all():
+        rd = random.randint(200,5000)
+        for j in session.query(Ingredient).all():
+            stock = Stock(code_postal = i.code_postal,nom_ingredient= j.nom_ingredient,quantite = rd)
+            session.add(stock)
+    session.commit()
+
+generateStock()
 
 session.close() # On ferme notre session
 
