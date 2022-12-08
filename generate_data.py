@@ -49,12 +49,12 @@ def generateEmploye(max_manager: int, max_employe: int):
     """
 
     for r in session.query(Restaurant).all():
-        session.add(Employe(code_postal=r.code_postal, poste="Directeur", nom=fake.last_name(), adresse=fake.street_address()))
+        session.add(Employe(code_postal=r.code_postal, poste="Directeur", nom=fake.last_name(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10), adresse=fake.street_address()))
         for _ in range(0, fake.pyint(min_value=1, max_value=max_manager)):
-            session.add(Employe(code_postal=r.code_postal, poste="Manager", id_superieur=session.query(Employe).filter_by(code_postal = r.code_postal).first().id_employe, nom=fake.last_name(), adresse=fake.street_address()))
-            for e in session.query(Employe).filter_by(code_postal = r.code_postal, poste = "Manager").all():
+            session.add(Employe(code_postal=r.code_postal, poste="Manager", id_superieur=session.query(Employe).filter_by(code_postal = r.code_postal).first().id_employe, nom=fake.last_name(), adresse=fake.street_address(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10)))
+            for e in session.query(Employe).filter_by(code_postal = r.code_postal,poste = "Manager").all():
                 for i in range(0, fake.pyint(min_value=1, max_value=max_employe)):
-                    session.add(Employe(code_postal=r.code_postal, poste=random.choice(["Cassier", "Cuisinier"]), id_superieur=e.id_employe, nom=fake.last_name(), adresse=fake.street_address()))
+                    session.add(Employe(code_postal=r.code_postal, poste=random.choice(["Cassier", "Cuisinier"]), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10),id_superieur=e.id_employe, nom=fake.last_name(), adresse=fake.street_address()))
     session.commit()
 
 generateEmploye(5, 10)
@@ -88,7 +88,6 @@ def generatePaie(nb_paie_max):
                 session.add(Paie(date=fake.unique.date(), id_employe=e.id_employe, salaire_net = fake.pyfloat(right_digits=2, positive=True, min_value=900.0, max_value=1800.0)))
     session.commit()
 
-generatePaie(1)
 
 
 
