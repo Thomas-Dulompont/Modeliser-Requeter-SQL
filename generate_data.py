@@ -146,10 +146,11 @@ def generateRecette():
     """
     for i in session.query(Item).all():
         rd = random.randint(100,2500)
-        
+        rd2 = random.randint(1,5)
         if i.type == "Plat" or i.type == "Dessert":
-            recette = Recette(nom_item = i.nom_item ,nom_ingredient = random.choice(session.query(Ingredient).all()).nom_ingredient, quantite = rd )
-            session.add(recette)
+            for j in range(rd2):
+                recette = Recette(nom_item = i.nom_item ,nom_ingredient = random.choice(session.query(Ingredient).all()).nom_ingredient, quantite = rd )
+                session.add(recette)
         if i.type == "Boisson" :
             recette = Recette(nom_item = i.nom_item ,nom_ingredient = i.nom_item, quantite = rd )
             session.add(recette)
@@ -169,6 +170,20 @@ def generateStock():
     session.commit()
 
 generateStock()
+
+
+def generateMenu():
+    rd = random.randint(4,10)
+    for i in session.query(Restaurant).all():
+        for j in range(rd):
+            menu = Menu(boisson =random.choice(session.query(Item).filter(Item.type == "Boisson").all()).nom_item,
+            plat = random.choice(session.query(Item).filter(Item.type == "Plat").all()).nom_item,
+            dessert = random.choice(session.query(Item).filter(Item.type =="Dessert").all()).nom_item,
+            prix = random.randint(5,10))
+            session.add(menu)
+    session.commit()
+
+generateMenu()
 
 session.close() # On ferme notre session
 
