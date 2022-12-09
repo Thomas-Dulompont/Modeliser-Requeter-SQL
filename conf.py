@@ -9,8 +9,8 @@ from datetime import date, datetime
 engine = create_engine('sqlite:///db.sqlite')
 Base = declarative_base()
 
-Session = sessionmaker(bind=engine) # On créer une session qui écoute "Engine"
-session = Session()
+Session = sessionmaker(bind=engine) # On créer une session1 qui écoute "Engine"
+session1 = Session()
 
 ### Génération des tables & des colonnes avec SQLAlchemy
 class Pays(Base):
@@ -23,7 +23,7 @@ class Pays(Base):
         Method qui retourne la liste des restaurants du pays
         return list : Liste des restaurants du pays
         """
-        return session.query(Restaurant).filter_by(pays = self.pays).all()
+        return session1.query(Restaurant).filter_by(pays = self.pays).all()
 
 
 class Restaurant(Base):
@@ -41,16 +41,16 @@ class Restaurant(Base):
         """
         Method qui permets de supprimer le restaurant
         """
-        session.delete(session.query(Restaurant).filter_by(code_postal = self.code_postal).first()) 
-        session.commit()
+        session1.delete(session1.query(Restaurant).filter_by(code_postal = self.code_postal).first()) 
+        session1.commit()
     
     def update(self, capacite:int, espace_enfant:int, service_rapide:int, accessibilite:int, parking:int):
         """
         Method qui permets de mettre à jour les données du restaurant
         """
-        resto = session.query(Restaurant).filter_by(code_postal = self.code_postal)
+        resto = session1.query(Restaurant).filter_by(code_postal = self.code_postal)
         resto.update({Restaurant.capacite:capacite, Restaurant.espace_enfant:espace_enfant, Restaurant.service_rapide:service_rapide, Restaurant.accessibilite:accessibilite, Restaurant.parking:parking}, synchronize_session = False)
-        session.commit()
+        session1.commit()
 
 
     def get_directeur(self):
@@ -58,7 +58,7 @@ class Restaurant(Base):
         Method qui retourne le directeur du restaurant
         return Employe : l'objet du directeur
         """
-        return session.query(Employe).filter_by(code_postal = self.code_postal, poste = "Directeur").first()
+        return session1.query(Employe).filter_by(code_postal = self.code_postal, poste = "Directeur").first()
 
     def get_all_manager(self):
         """
@@ -66,14 +66,14 @@ class Restaurant(Base):
         retur list : Liste de manager
         """
 
-        return session.query(Employe).filter_by(code_postal = self.code_postal, poste = "Manager").all()
+        return session1.query(Employe).filter_by(code_postal = self.code_postal, poste = "Manager").all()
 
     def get_all_employe(self):
         """
         Method qui retourne la liste des employés du restaurant
         return list : Liste des employés du restaurant
         """
-        return session.query(Employe).filter_by(code_postal = self.code_postal).all()
+        return session1.query(Employe).filter_by(code_postal = self.code_postal).all()
 
 
     def get_employe(self, id_employe):
@@ -81,7 +81,7 @@ class Restaurant(Base):
         Method qui retourne les informations de l'employé du restaurant
         return Employe : Objet de l'employé
         """
-        return session.query(Employe).filter(Employe.id_employe == id_employe,Employe.code_postal==self.code_postal)
+        return session1.query(Employe).filter(Employe.id_employe == id_employe,Employe.code_postal==self.code_postal)
 
     def create_employe(self, nom: str, poste: str, adresse: str):
         """
@@ -90,17 +90,17 @@ class Restaurant(Base):
         id_superieur = None
         if poste.lower() == "manager":
             id_superieur = self.find_directeur().id_employe
-            session.add(Employe(code_postal=self.code_postal, poste="Manager", id_superieur=id_superieur, nom=nom, adresse=adresse))
+            session1.add(Employe(code_postal=self.code_postal, poste="Manager", id_superieur=id_superieur, nom=nom, adresse=adresse))
         elif poste.lower() == "directeur":
             if self.find_directeur() != None:
                 return
             else:
-                session.add(Employe(code_postal=self.code_postal, poste="Directeur", nom=nom, adresse=adresse))
+                session1.add(Employe(code_postal=self.code_postal, poste="Directeur", nom=nom, adresse=adresse))
         else:
             id_superieur = random.choice(self.find_manager()).id_employe
-            session.add(Employe(code_postal=self.code_postal, poste=poste, id_superieur=id_superieur, nom=nom, adresse=adresse))
+            session1.add(Employe(code_postal=self.code_postal, poste=poste, id_superieur=id_superieur, nom=nom, adresse=adresse))
         
-        session.commit()
+        session1.commit()
     
     
     def update_employe(self, id_employe: int, new_adress: str):
@@ -109,15 +109,15 @@ class Restaurant(Base):
         """
         employe = self.get_employe(id_employe)
         employe.update({Employe.adresse:new_adress}, synchronize_session = False)
-        session.commit()
+        session1.commit()
 
 
     def delete_employe(self, id_employe):
         """
         Method qui supprime un employé du restaurant
         """
-        session.delete(session.query(Employe).filter_by(code_postal = self.code_postal, id_employe = id_employe).first()) 
-        session.commit()
+        session1.delete(session1.query(Employe).filter_by(code_postal = self.code_postal, id_employe = id_employe).first()) 
+        session1.commit()
 
     def generate_paie(self):
         """
@@ -138,9 +138,9 @@ class Restaurant(Base):
             else:
                 salaire = 1200
                 salaire += salaire * coeff
-            session.add(Paie(date=date, id_employe=employe.id_employe, salaire_net=salaire))
+            session1.add(Paie(date=date, id_employe=employe.id_employe, salaire_net=salaire))
         
-        session.commit()
+        session1.commit()
 
 
 
@@ -163,21 +163,21 @@ class Employe(Base):
         Method qui retourne la liste des salaires de l'employé
         return list : Liste des salaires
         """
-        return session.query(Paie).filter_by(id_employe = self.id_employe).all()
+        return session1.query(Paie).filter_by(id_employe = self.id_employe).all()
 
     def get_restaurant(self):
         """
         Method qui retourne le restaurant de l'employé
         return Restaurant : Objet du restaurant
         """
-        return session.query(Restaurant).filter_by(code_postal = self.code_postal).first()
+        return session1.query(Restaurant).filter_by(code_postal = self.code_postal).first()
     
     def get_rib(self):
         """
         Method qui retourne le rib de l'employé
         return Rib : rib de l'employé
         """
-        return session.query(Rib).filter_by(id_employe = self.id_employe).first()
+        return session1.query(Rib).filter_by(id_employe = self.id_employe).first()
 
 class Rib(Base):
     __tablename__ = "Rib"
@@ -259,6 +259,12 @@ class PanierMenu(Base):
     id_bill = Column(Integer, ForeignKey('Bill.id_bill'), primary_key=True)
     id_menu = Column(Integer, ForeignKey('Menu.id_menu'), primary_key=True)
     quantite = Column(Integer)
+
+class CarteMenu(Base):
+    __tablename__ = "CarteMenu"
+
+    pays = Column(String, ForeignKey('Pays.pays'),primary_key = True)
+    id_menu = Column(Integer, ForeignKey('Menu.id_menu'),primary_key = True)
 
 # Enregistrement des tables
 Base.metadata.create_all(engine)
