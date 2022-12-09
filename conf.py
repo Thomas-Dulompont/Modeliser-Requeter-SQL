@@ -6,11 +6,11 @@ import random
 from datetime import date, datetime
 
 # Connection à la BDD
-engine = create_engine('sqlite:///db.sqlite')
+engine1 = create_engine('sqlite:///db.sqlite')
 Base = declarative_base()
 
-Session = sessionmaker(bind=engine) # On créer une session1 qui écoute "Engine"
-session1 = Session()
+Session1 = sessionmaker(bind=engine1) # On créer une session qui écoute "Engine"
+session1 = Session1()
 
 ### Génération des tables & des colonnes avec SQLAlchemy
 class Pays(Base):
@@ -30,6 +30,7 @@ class Restaurant(Base):
     __tablename__ = "Restaurant"
 
     code_postal = Column(String, primary_key=True)
+    departement = Column(String)
     pays = Column(String, ForeignKey('Pays.pays'))
     capacite = Column(Integer, default=0)
     espace_enfant = Column(SmallInteger, default=0)
@@ -49,7 +50,8 @@ class Restaurant(Base):
         Method qui permets de mettre à jour les données du restaurant
         """
         resto = session1.query(Restaurant).filter_by(code_postal = self.code_postal)
-        resto.update({Restaurant.capacite:capacite, Restaurant.espace_enfant:espace_enfant, Restaurant.service_rapide:service_rapide, Restaurant.accessibilite:accessibilite, Restaurant.parking:parking}, synchronize_session = False)
+
+        resto.update({Restaurant.capacite:capacite, Restaurant.espace_enfant:espace_enfant, Restaurant.service_rapide:service_rapide, Restaurant.accessibilite:accessibilite, Restaurant.parking:parking}, synchronize_session1 = False)
         session1.commit()
 
 
@@ -108,7 +110,7 @@ class Restaurant(Base):
         Method qui met a jour un employé du restaurant
         """
         employe = self.get_employe(id_employe)
-        employe.update({Employe.adresse:new_adress}, synchronize_session = False)
+        employe.update({Employe.adresse:new_adress}, synchronize_session1 = False)
         session1.commit()
 
 
@@ -138,6 +140,8 @@ class Restaurant(Base):
             else:
                 salaire = 1200
                 salaire += salaire * coeff
+
+            salaire = round(salaire, 3)
             session1.add(Paie(date=date, id_employe=employe.id_employe, salaire_net=salaire))
         
         session1.commit()
@@ -267,4 +271,4 @@ class CarteMenu(Base):
     id_menu = Column(Integer, ForeignKey('Menu.id_menu'),primary_key = True)
 
 # Enregistrement des tables
-Base.metadata.create_all(engine)
+Base.metadata.create_all(engine1)
