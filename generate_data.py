@@ -1,3 +1,8 @@
+import os
+
+os.system("rm db.sqlite")
+os.system("rm exercice.sqlite")
+
 """
 Ce fichier sert à générer des informations fictives avec le module "Faker"
 Il nous permets de générer des lignes SQL en fonction des besoins de projet
@@ -20,9 +25,9 @@ def generateCountry(nb_country: int):
     """
     for _ in range(0, nb_country):
         pays = Pays(pays=fake.unique.country())
-        session.add(pays)
+        session1.add(pays)
 
-    session.commit()
+    session1.commit()
 
 generateCountry(225)
 
@@ -33,29 +38,28 @@ def generateRestaurant(nb_restaurant):
     """
 
     for _ in range(0, nb_restaurant):
-
-        my_country = random.choice(session.query(Pays).all()).pays
-
-        resto = Restaurant(code_postal=fake.unique.postcode(), pays=my_country, capacite=fake.pyint(min_value=50, max_value=200), espace_enfant=fake.pyint(min_value=0, max_value=1), service_rapide=fake.pyint(min_value=0, max_value=1), accessibilite=fake.pyint(min_value=0, max_value=1), parking=fake.pyint(min_value=0, max_value=1))
-        session.add(resto)
+        my_country = random.choice(session1.query(Pays).all()).pays
+        code = fake.unique.postcode()
+        resto = Restaurant(code_postal=code,departement=code[:2], pays=my_country, capacite=fake.pyint(min_value=50, max_value=200), espace_enfant=fake.pyint(min_value=0, max_value=1), service_rapide=fake.pyint(min_value=0, max_value=1), accessibilite=fake.pyint(min_value=0, max_value=1), parking=fake.pyint(min_value=0, max_value=1))
+        session1.add(resto)
         
-    session.commit()
+    session1.commit()
 
-generateRestaurant(100)
+generateRestaurant(1000)
 
 def generateEmploye(max_manager: int, max_employe: int):
     """
     Fonction qui genere les employés de chaques Restaurant
     """
 
-    for r in session.query(Restaurant).all():
-        session.add(Employe(code_postal=r.code_postal, poste="Directeur", nom=fake.last_name(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10), adresse=fake.street_address()))
+    for r in session1.query(Restaurant).all():
+        session1.add(Employe(code_postal=r.code_postal, poste="Directeur", nom=fake.last_name(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10), adresse=fake.street_address()))
         for _ in range(0, fake.pyint(min_value=1, max_value=max_manager)):
-            session.add(Employe(code_postal=r.code_postal, poste="Manager", id_superieur=session.query(Employe).filter_by(code_postal = r.code_postal).first().id_employe, nom=fake.last_name(), adresse=fake.street_address(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10)))
-            for e in session.query(Employe).filter_by(code_postal = r.code_postal,poste = "Manager").all():
+            session1.add(Employe(code_postal=r.code_postal, poste="Manager", id_superieur=session1.query(Employe).filter_by(code_postal = r.code_postal).first().id_employe, nom=fake.last_name(), adresse=fake.street_address(), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10)))
+            for e in session1.query(Employe).filter_by(code_postal = r.code_postal,poste = "Manager").all():
                 for i in range(0, fake.pyint(min_value=1, max_value=max_employe)):
-                    session.add(Employe(code_postal=r.code_postal, poste=random.choice(["Cassier", "Cuisinier"]), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10),id_superieur=e.id_employe, nom=fake.last_name(), adresse=fake.street_address()))
-    session.commit()
+                    session1.add(Employe(code_postal=r.code_postal, poste=random.choice(["Cassier", "Cuisinier"]), experience=fake.pyint(min_value=1, max_value=5), note=fake.pyint(min_value=1, max_value=10),id_superieur=e.id_employe, nom=fake.last_name(), adresse=fake.street_address()))
+    session1.commit()
 
 generateEmploye(5, 10)
 
@@ -64,32 +68,25 @@ def generateRib():
     Fonction qui genere des rib pour chaque employé
     """
 
-    for r in session.query(Restaurant).all():
-        employes = session.query(Employe).filter_by(code_postal = r.code_postal).all()
+    for r in session1.query(Restaurant).all():
+        employes = session1.query(Employe).filter_by(code_postal = r.code_postal).all()
         for e in employes:
-            session.add(Rib(id_employe=e.id_employe, iban=fake.unique.iban(), bic=fake.unique.swift(), proprietaire=e.nom))
+            session1.add(Rib(id_employe=e.id_employe, iban=fake.unique.iban(), bic=fake.unique.swift(), proprietaire=e.nom))
     
-    session.commit()
+    session1.commit()
 
 generateRib()
 
-def generatePaie(nb_paie_max):
+def generatePaie():
     """
     Fonction qui genere des paie pour chaque employé
     """
+    for pays in session1.query(Pays).all():
+        for restaurant in pays.get_all_restaurant():
+            restaurant.generate_paie()
+    session1.commit()
 
-    for e in session.query(Employe).all():
-        for _ in range(0, fake.pyint(min_value=1, max_value=nb_paie_max)):
-            if e.poste == "Directeur":
-                session.add(Paie(date=fake.unique.date(), id_employe=e.id_employe, salaire_net = fake.pyfloat(right_digits=2, positive=True, min_value=2000.0, max_value=3500.0)))
-            elif e.poste == "Manager":
-                session.add(Paie(date=fake.unique.date(), id_employe=e.id_employe, salaire_net = fake.pyfloat(right_digits=2, positive=True, min_value=1500.0, max_value=2000.0)))
-            else:
-                session.add(Paie(date=fake.unique.date(), id_employe=e.id_employe, salaire_net = fake.pyfloat(right_digits=2, positive=True, min_value=900.0, max_value=1800.0)))
-    session.commit()
-
-
-
+generatePaie()
 
 
 def generateIngre(nb_ingre: int):
@@ -101,9 +98,9 @@ def generateIngre(nb_ingre: int):
     for _ in range(0, nb_ingre):
         rd = random.randint(1,5)
         ingre = Ingredient(nom_ingredient=fake.unique.ingredient(),cout = rd)
-        session.add(ingre)
+        session1.add(ingre)
         
-    session.commit()
+    session1.commit()
 
 generateIngre(100)
 
@@ -122,21 +119,21 @@ def generateItems():
             rd = random.randint(1,10)
 
             items = Item(nom_item = i+j, type = "Boisson",prix = rd)
-            session.add(items)
+            session1.add(items)
     
     for i in listPlat:
         rd = random.randint(1,10)
 
         items = Item(nom_item = i , type = "Plat",prix = rd)
-        session.add(items)
+        session1.add(items)
 
     for i in listDessert:
         rd = random.randint(1,10)
 
         items = Item(nom_item = i , type = "Dessert",prix = rd)
-        session.add(items)  
+        session1.add(items)  
 
-    session.commit() 
+    session1.commit() 
 
 generateItems()
 
@@ -144,17 +141,17 @@ def generateRecette():
     """
     Fonction qui genere des recette par rapport a la liste d'ingredients 
     """
-    for i in session.query(Item).all():
+    for i in session1.query(Item).all():
         rd = random.randint(100,2500)
         rd2 = random.randint(1,5)
         if i.type == "Plat" or i.type == "Dessert":
             for j in range(rd2):
-                recette = Recette(nom_item = i.nom_item ,nom_ingredient = random.choice(session.query(Ingredient).all()).nom_ingredient, quantite = rd )
-                session.add(recette)
+                recette = Recette(nom_item = i.nom_item ,nom_ingredient = random.choice(session1.query(Ingredient).all()).nom_ingredient, quantite = rd )
+                session1.add(recette)
         if i.type == "Boisson" :
             recette = Recette(nom_item = i.nom_item ,nom_ingredient = i.nom_item, quantite = rd )
-            session.add(recette)
-    session.commit()
+            session1.add(recette)
+    session1.commit()
 
 generateRecette()
 
@@ -162,29 +159,34 @@ def generateStock():
     """
     Fonction qui genere les stocks des ingrédients
     """
-    for i in session.query(Restaurant).all():
+    for i in session1.query(Restaurant).all():
         rd = random.randint(200,5000)
-        for j in session.query(Ingredient).all():
+        for j in session1.query(Ingredient).all():
             stock = Stock(code_postal = i.code_postal,nom_ingredient= j.nom_ingredient,quantite = rd)
-            session.add(stock)
-    session.commit()
+            session1.add(stock)
+    session1.commit()
 
 generateStock()
 
 
 def generateMenu():
     rd = random.randint(4,10)
-    for i in session.query(Restaurant).all():
+    for i in session1.query(Restaurant).all():
         for j in range(rd):
-            menu = Menu(boisson =random.choice(session.query(Item).filter(Item.type == "Boisson").all()).nom_item,
-            plat = random.choice(session.query(Item).filter(Item.type == "Plat").all()).nom_item,
-            dessert = random.choice(session.query(Item).filter(Item.type =="Dessert").all()).nom_item,
+            menu = Menu(boisson =random.choice(session1.query(Item).filter(Item.type == "Boisson").all()).nom_item,
+            plat = random.choice(session1.query(Item).filter(Item.type == "Plat").all()).nom_item,
+            dessert = random.choice(session1.query(Item).filter(Item.type =="Dessert").all()).nom_item,
             prix = random.randint(5,10))
-            session.add(menu)
-    session.commit()
+            session1.add(menu)
+    session1.commit()
 
 generateMenu()
 
-session.close() # On ferme notre session
+from crud import *
+
+
+
+
+session1.close() # On ferme notre session1
 
 
