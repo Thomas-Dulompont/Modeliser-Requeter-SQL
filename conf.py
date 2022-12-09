@@ -246,7 +246,7 @@ class PanierItem(Base):
 
     nom_item = Column(String, ForeignKey('Item.nom_item'), primary_key= True)
     id_bill = Column(Integer, ForeignKey('Bill.id_bill'), primary_key=True)
-    quatite = Column(Integer)
+    quantite = Column(Integer)
 
 class Menu(Base):
     __tablename__ = "Menu"

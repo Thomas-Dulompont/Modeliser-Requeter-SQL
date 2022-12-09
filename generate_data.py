@@ -1,7 +1,10 @@
 import os
 
-os.system("rm db.sqlite")
-os.system("rm exercice.sqlite")
+try:
+    os.system("rm db.sqlite")
+    os.system("rm exercices.sqlite")
+except:
+    pass
 
 """
 Ce fichier sert à générer des informations fictives avec le module "Faker"
@@ -85,7 +88,7 @@ def generatePaie():
         for restaurant in pays.get_all_restaurant():
             restaurant.generate_paie()
     session1.commit()
-    
+
 generatePaie()
 
 
@@ -141,13 +144,16 @@ def generateRecette():
     """
     Fonction qui genere des recette par rapport a la liste d'ingredients 
     """
-    for i in session1.query(Item).all():
+    all_items = session1.query(Item).all()
+    for i in all_items:
         rd = random.randint(100,2500)
         rd2 = random.randint(1,5)
         if i.type == "Plat" or i.type == "Dessert":
             for j in range(rd2):
-                recette = Recette(nom_item = i.nom_item ,nom_ingredient = random.choice(session1.query(Ingredient).all()).nom_ingredient, quantite = rd )
-                session1.add(recette)
+                mon_ingredient = random.choice(session1.query(Ingredient).all()).nom_ingredient
+                if len(session1.query(Recette).filter_by(nom_item = i.nom_item, nom_ingredient = mon_ingredient).all()) == 0:
+                    recette = Recette(nom_item = i.nom_item ,nom_ingredient = mon_ingredient, quantite = rd )
+                    session1.add(recette)
         if i.type == "Boisson" :
             recette = Recette(nom_item = i.nom_item ,nom_ingredient = i.nom_item, quantite = rd )
             session1.add(recette)
@@ -173,7 +179,7 @@ def generateMenu():
     """
     Fonction qui genere les menus
     """
-    rd = random.randint(4,10)
+    rd = random.randint(2,5)
     for i in session1.query(Restaurant).all():
         for j in range(rd):
             menu = Menu(boisson =random.choice(session1.query(Item).filter(Item.type == "Boisson").all()).nom_item,
@@ -181,7 +187,7 @@ def generateMenu():
             dessert = random.choice(session1.query(Item).filter(Item.type =="Dessert").all()).nom_item,
             prix = random.randint(5,10))
             session1.add(menu)
-            session1.commit()
+    session1.commit()
 
 generateMenu()
 
@@ -193,7 +199,7 @@ def generateCarteItem():
         for j in session1.query(Item).all():
              carteItem = CarteItem(pays = i.pays,nom_item = j.nom_item)
              session1.add(carteItem)
-             session1.commit()
+    session1.commit()
 
 generateCarteItem()
 
@@ -202,14 +208,13 @@ def generateBill():
     Fonction qui genere les factures
     """
     listMoyPay = ["Carte_bleue","Especes","Cheque","Ticket_restaurant"]
-    for i in session1.query(Pays).all():
-        for j in session1.query(Restaurant).all():
-            bill = Bill(code_postal = j.code_postal,
-            id_vendeur = random.choice(session1.query(Employe).all()).id_employe,
-            moyen_paiement = random.choice(listMoyPay),
-            prix_total = random.randint(8,20) )
-            session1.add(bill)
-            session1.commit()
+    for j in session1.query(Restaurant).all():
+        bill = Bill(code_postal = j.code_postal,
+        id_vendeur = random.choice(session1.query(Employe).filter_by(code_postal = j.code_postal).all()).id_employe,
+        moyen_paiement = random.choice(listMoyPay),
+        prix_total = random.randint(8,20))
+        session1.add(bill)
+    session1.commit()
 
 
 generateBill()
@@ -219,13 +224,12 @@ def generatePanierItem():
     """
     Fonction qui genere les panier d'items
     """
-    for i in session1.query(Restaurant).all():
-        for j in session1.query(Bill).all():
-            panierItem = PanierItem(nom_item =random.choice(session1.query(Item).all()).nom_item,
-            id_bill = j.id_bill,
-            quatite = random.randint(5,20))
-            session1.add(panierItem)
-            session1.commit()
+    for j in session1.query(Bill).all():
+        panierItem = PanierItem(nom_item =random.choice(session1.query(Item).all()).nom_item,
+        id_bill = j.id_bill,
+        quantite = random.randint(5,20))
+        session1.add(panierItem)
+    session1.commit()
 
 generatePanierItem()
 
@@ -233,11 +237,10 @@ def generatePanierMenu():
     """
     Fonction qui genere les panier d'items
     """
-    for i in session1.query(Restaurant).all():
-        for j in session1.query(Bill).all():
-            panierMenu = PanierMenu(id_bill = j.id_bill,id_menu = session1.query(Menu).all().id_menu,quantité = random.randint(5,20))
-            session1.add(panierMenu)
-            session1.commit()
+    for j in session1.query(Bill).all():
+        panierMenu = PanierMenu(id_bill = j.id_bill,id_menu = random.choice(session1.query(Menu).all()).id_menu,quantite = random.randint(5,20))
+        session1.add(panierMenu)
+    session1.commit()
 
 
 generatePanierMenu()
@@ -247,12 +250,12 @@ def generateCarteMenu():
     Fonction qui genere les menus de cartes
     """
     for i  in session1.query(Pays).all():
-        carteMenu = CarteMenu(pays = i.pays,id_menu = session1.query(Menu).all().id_menu)
+        carteMenu = CarteMenu(pays = i.pays,id_menu = random.choice(session1.query(Menu).all()).id_menu)
         session1.add(carteMenu)
         session1.commit()
     session1.commit()
 
-generateMenu()
+generateCarteMenu()
 
 from crud import *
 
