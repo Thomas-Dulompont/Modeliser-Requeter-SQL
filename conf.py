@@ -50,6 +50,7 @@ class Restaurant(Base):
         Method qui permets de mettre à jour les données du restaurant
         """
         resto = session1.query(Restaurant).filter_by(code_postal = self.code_postal)
+
         resto.update({Restaurant.capacite:capacite, Restaurant.espace_enfant:espace_enfant, Restaurant.service_rapide:service_rapide, Restaurant.accessibilite:accessibilite, Restaurant.parking:parking}, synchronize_session1 = False)
         session1.commit()
 
@@ -139,6 +140,7 @@ class Restaurant(Base):
             else:
                 salaire = 1200
                 salaire += salaire * coeff
+
             salaire = round(salaire, 3)
             session1.add(Paie(date=date, id_employe=employe.id_employe, salaire_net=salaire))
         
@@ -265,8 +267,8 @@ class PanierMenu(Base):
 class CarteMenu(Base):
     __tablename__ = "CarteMenu"
 
-    pays = Column(String, ForeignKey('Pays.pays'), primary_key=True)
-    id_menu = Column(String, ForeignKey('Menu.id_menu'), primary_key=True)
+    pays = Column(String, ForeignKey('Pays.pays'),primary_key = True)
+    id_menu = Column(Integer, ForeignKey('Menu.id_menu'),primary_key = True)
 
 # Enregistrement des tables
 Base.metadata.create_all(engine1)
